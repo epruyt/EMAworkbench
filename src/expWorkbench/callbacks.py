@@ -161,6 +161,11 @@ class DefaultCallback(AbstractCallback):
     def _store_result(self, result):
         for outcome in self.outcomes:
             try:
+                debug("storing {}".format(outcome))
+            except ValueError:
+                print "what"
+            
+            try:
                 outcome_res = result[outcome]
             except KeyError:
                 ema_logging.debug("%s not in msi" % outcome)

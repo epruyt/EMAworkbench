@@ -40,9 +40,9 @@ from ema_logging import debug, exception, info, warning, NullHandler, LOG_FORMAT
 import ema_logging                  
                                      
 from expWorkbench.ema_exceptions import CaseError, EMAError, EMAParallelError
-import tempfile
 
 __all__ = ['CalculatorPool']
+
 
 def worker(inqueue, 
            outqueue, 
@@ -117,12 +117,11 @@ def worker(inqueue,
             
         debug("trying to retrieve output")
         result = msi.retrieve_output()
-        
         result = (True, (experiment, policy, msi.name, result))
-        msi.reset_model()
+        put((job, result))
         
         debug("trying to reset model")
-        put((job, result))
+        msi.reset_model()
             
 
 class CalculatorPool(Pool):
@@ -178,7 +177,7 @@ class CalculatorPool(Pool):
             # generate a random string helps in running repeatedly with
             # crashes
             choice_set = string.ascii_uppercase + string.digits + string.ascii_lowercase
-            random_string = ''.join(random.choice(choice_set) for e in range(5))
+            random_string = ''.join(random.choice(choice_set) for _ in range(5))
             
             workername = 'tpm_{}_PoolWorker_{}'.format(random_string, i)
             
@@ -285,7 +284,7 @@ class CalculatorPool(Pool):
         self._feeder_thread.join()
         
         event.wait()
-     
+
     @staticmethod
     def _handle_tasks(taskqueue, put, outqueue, pool):
         thread = threading.current_thread()
@@ -312,7 +311,7 @@ class CalculatorPool(Pool):
 
             # tell workers there is no more work
             debug('task handler sending sentinel to workers')
-            for i in range(2*len(pool)):
+            for _ in range(2*len(pool)):
                 put(None)
         except IOError:
             debug('task handler got IOError when sending sentinels')
@@ -367,7 +366,7 @@ class CalculatorPool(Pool):
             # attempts to add the sentinel (None) to outqueue may
             # block.  There is guaranteed to be no more than 2 sentinels.
             try:
-                for i in range(10):
+                for _ in range(10):
                     if not outqueue._reader.poll():
                         break
                     get()
