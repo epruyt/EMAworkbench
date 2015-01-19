@@ -426,7 +426,7 @@ class PrimTestCase(unittest.TestCase):
                      dtype=[('a', np.float),
                             ('b', np.float)])
         
-        self.assertTrue(np.all(prim_obj.compare(a,b)))
+        self.assertTrue(np.all(prim._compare(a,b)))
         
         # all dimensions different
         a = np.array([(0,1),
@@ -437,7 +437,7 @@ class PrimTestCase(unittest.TestCase):
                       (0,0)], 
                      dtype=[('a', np.float),
                             ('b', np.float)])
-        test = prim_obj.compare(a,b)==False
+        test = prim._compare(a,b)==False
         self.assertTrue(np.all(test))
         
         # dimensions 1 different and dimension 2 the same
@@ -449,7 +449,7 @@ class PrimTestCase(unittest.TestCase):
                       (0,1)], 
                      dtype=[('a', np.float),
                             ('b', np.float)])
-        test = prim_obj.compare(a,b)
+        test = prim._compare(a,b)
         test = (test[0]==False) & (test[1]==True)
         self.assertTrue(test)
 
@@ -557,13 +557,38 @@ class PrimTestCase(unittest.TestCase):
                 
         prim_obj = prim.Prim(results, classify, 
                              threshold=0.7)
-        box1 = prim_obj.find_box()
-        box2 = prim_obj.find_box()
+        prim_obj.find_box()
+        prim_obj.find_box()
         
         prim_obj.write_boxes_to_stdout()
         
         prim_obj.show_boxes()   
 #         plt.show()
+  
+    def test_write_boxes_to_stdout(self):
+        dtype = [('a', np.float),('b', np.object)]
+        x = np.empty((10, ), dtype=dtype)
+        
+        x['a'] = np.random.rand(10,)
+        x['b'] = ['a','b','a','b','a','a','b','a','b','a', ]
+        y = np.random.randint(0,2, (10,))
+        y = y.astype(np.int)
+        y = {'y':y}
+        results = x,y
+        classify = 'y'
+                
+        prim_obj = prim.Prim(results, classify, 
+                             threshold=0.7)
+        box_lim = np.array([(0.0, set(['a'])),
+                        (1.0, set(['a']))], dtype=dtype )
+        yi = prim._in_box(x, box_lim)
+        
+        
+        box = prim.PrimBox(prim_obj, box_lim, yi)
+        prim_obj.boxes.append(box)
+        
+        prim_obj.write_boxes_to_stdout()
+        
   
     def test_find_boxes(self):
         results = util.load_flu_data()
@@ -658,6 +683,6 @@ if __name__ == '__main__':
 
     unittest.main()
 
-#    suite = unittest.TestSuite()
-#    suite.addTest(PrimBoxTestCase("test_inspect"))
-#    unittest.TextTestRunner().run(suite)
+#     suite = unittest.TestSuite()
+#     suite.addTest(PrimTestCase("test_write_boxes_to_stdout"))
+#     unittest.TextTestRunner().run(suite)
